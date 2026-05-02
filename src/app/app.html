@@ -12,12 +12,17 @@
         <span class="platform-tag">
           <img [src]="getPlatformIcon(msg.Platform)" [alt]="msg.Platform" class="platform-icon">
         </span>
-        
+
         <span class="message-user" [style.color]="getUserColor(msg.UserName)">
           {{ msg.UserName }}:
         </span>
-        
-        <span class="message-text">{{ msg.Message }}</span>
+
+        <span class="message-text">
+          <ng-container *ngFor="let segment of getMessageSegments(msg.Message)">
+            <img *ngIf="isEmote(segment)" [src]="segment" class="chat-emote">
+            <span *ngIf="!isEmote(segment)">{{ segment }}</span>
+          </ng-container>
+        </span>
       </div>
       <div class="message-time">{{ msg.CreatedAt | date: 'HH:mm' }}</div>
     </div>

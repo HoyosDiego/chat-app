@@ -106,7 +106,18 @@
     white-space: nowrap;
 }
 
+.chat-emote {
+    height: 28px;
+    width: auto;
+    vertical-align: middle;
+    margin: 0 4px;
+    display: inline-block;
+}
+
 .message-text {
+    word-wrap: break-word;
+    display: inline-flex;
+    align-items: center;
     color: #070707;
     word-break: break-word;
 }

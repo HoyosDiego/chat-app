@@ -53,19 +53,19 @@ export class App implements OnInit, OnDestroy {
 
   private scrollToBottom(): void {
     setTimeout(() => {
-    const container = document.querySelector('.messages-container') as HTMLElement;
+      const container = document.querySelector('.messages-container') as HTMLElement;
 
-    if (container) {
-      container.scrollTop = container.scrollHeight;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
 
-      const messages = container.querySelectorAll('.message');
-      if (messages.length > 0) {
-        const lastMessage = [...messages].at(-1);
-        lastMessage?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        const messages = container.querySelectorAll('.message');
+        if (messages.length > 0) {
+          const lastMessage = [...messages].at(-1);
+          lastMessage?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
       }
-
-    }
-  }, 50);
+    }, 50);
   }
 
   getPlatformIcon(platform: string): string {
@@ -86,5 +86,19 @@ export class App implements OnInit, OnDestroy {
       color += ('00' + value.toString(16)).slice(-2);
     }
     return color;
+  }
+
+  public isEmote(message: string): boolean {
+    if (!message) {
+      return false;
+    }
+
+    return message.startsWith('https://static-cdn.jtvnw.net/emoticons');
+  }
+
+  public getMessageSegments(message: string) {
+    // Separa el string por URLs de Twitch
+    const regex = /(https:\/\/static-cdn\.jtvnw\.net\/emoticons\/v2\/[^\s]+)/g;
+    return message.split(regex).filter(part => part.length > 0);
   }
 }
