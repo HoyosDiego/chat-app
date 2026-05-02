@@ -1,5 +1,9 @@
 # ChatApp
 
+<video src="https://github.com/user-attachments/assets/2c0368f1-04bc-4f4e-8962-3f3b1a923ad0" width="100%" controls autoplay muted loop>
+  Tu navegador no soporta el elemento de video.
+</video>
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.0.
 
 ## Development server
