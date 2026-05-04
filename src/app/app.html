@@ -7,24 +7,27 @@
   </div>
 
   <div class="messages-container">
-    <div *ngFor="let msg of messages" class="message" [ngClass]="msg.Platform.toLowerCase()">
-      <div class="message-header">
-        <span class="platform-tag">
-          <img [src]="getPlatformIcon(msg.Platform)" [alt]="msg.Platform" class="platform-icon">
-        </span>
+    <div *ngFor="let msg of messages" class="message">
+      <div class="avatar" [style.background-color]="getUserColor(msg.UserName)">
+        {{ msg.UserName.charAt(0).toUpperCase() }}
+      </div>
 
-        <span class="message-user" [style.color]="getUserColor(msg.UserName)">
-          {{ msg.UserName }}:
-        </span>
+      <div class="message-content-wrapper">
+        <div class="message-header">
+          <span class="user-name">{{ msg.UserName }}</span>
+          <span class="badge sub-badge" *ngIf="isSub(msg.UserName)">SUB</span>
+          <span class="badge platform-badge" [ngClass]="msg.Platform.toLowerCase()">{{ msg.Platform | uppercase
+            }}</span>
+          <span class="message-time">{{ msg.CreatedAt | date: 'HH:mm' }}</span>
+        </div>
 
-        <span class="message-text">
+        <div class="message-text">
           <ng-container *ngFor="let segment of getMessageSegments(msg.Message)">
             <img *ngIf="isEmote(segment)" [src]="segment" class="chat-emote">
             <span *ngIf="!isEmote(segment)">{{ segment }}</span>
           </ng-container>
-        </span>
+        </div>
       </div>
-      <div class="message-time">{{ msg.CreatedAt | date: 'HH:mm' }}</div>
     </div>
   </div>
 </div>

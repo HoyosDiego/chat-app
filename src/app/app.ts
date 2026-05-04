@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ChatService, ChatMessage } from './services/chat.service';
+import { ChatService } from './services/chat.service';
+import { ChatMessage } from './services/chat.service.types';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -97,8 +98,13 @@ export class App implements OnInit, OnDestroy {
   }
 
   public getMessageSegments(message: string) {
-    // Separa el string por URLs de Twitch
     const regex = /(https:\/\/static-cdn\.jtvnw\.net\/emoticons\/v2\/[^\s]+)/g;
     return message.split(regex).filter(part => part.length > 0);
+  }
+
+  public isSub(userName: string): boolean {
+    // Simulación de validación de suscriptor para la demostración
+    const lower = userName.toLowerCase();
+    return lower.includes('pro') || lower.includes('master') || lower.includes('sub');
   }
 }

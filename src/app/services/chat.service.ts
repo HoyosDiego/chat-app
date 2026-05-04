@@ -1,99 +1,65 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-
-export interface ChatMessage {
-  UserName: string;
-  Message: string;
-  Platform: string;
-  CreatedAt: Date | string | number;
-}
+import { ChatMessage, ConnectionStatus, ReceiveMessagePayload, SignalRMessageData, SignalRMessageType } from './chat.service.types';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ChatService {
-    
+
+export class ChatService implements OnDestroy {
+  private readonly HUB_URL = 'ws://localhost:5000/chatHub';
+  private readonly MAX_MESSAGES = 100;
+  private readonly RECORD_SEPARATOR = '\x1e';
+  private readonly RECONNECT_INTERVAL = 5000;
+
   private messages$ = new BehaviorSubject<ChatMessage[]>([]);
-  private connectionStatus$ = new BehaviorSubject<string>('Desconectado');
+  private connectionStatus$ = new BehaviorSubject<ConnectionStatus>(ConnectionStatus.Disconnected);
   private webSocket: WebSocket | null = null;
-  private readonly hubUrl = 'ws://localhost:5000/chatHub';
+  private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private isIntentionalDisconnect = false;
 
   constructor() { }
 
+  ngOnDestroy(): void {
+    this.disconnect();
+  }
+
   connect(): void {
+    this.isIntentionalDisconnect = false;
+
     if (this.webSocket) {
       return;
     }
 
+    this.connectionStatus$.next(ConnectionStatus.Connecting);
+
     try {
-      this.webSocket = new WebSocket(this.hubUrl);
+      this.webSocket = new WebSocket(this.HUB_URL);
 
-      this.webSocket.onopen = () => {
-        this.connectionStatus$.next('Conectado');
-        const handshake = JSON.stringify({ protocol: 'json', version: 1 }) + '\x1e';
-        this.webSocket?.send(handshake);
-      };
-
-      this.webSocket.onmessage = (event) => {
-        try {
-          const rawData = event.data.split('\x1e');
-          
-          rawData.forEach((message: string) => {
-            if (!message.trim()) {
-              return;
-            }
-
-            const data = JSON.parse(message);
-
-            if (data.type === 6) {
-              this.webSocket?.send(JSON.stringify({ type: 6 }) + '\x1e');
-              return;
-            }
-
-            if (data.type === 1 && data.target === 'ReceiveMessage') {
-              const payload = data.arguments[0];
-              const newMessage: ChatMessage = {
-                UserName: payload.userName || 'Sistema',
-                Message: payload.message || '',
-                Platform: payload.platform || 'Desconocido',
-                CreatedAt: payload.createdAt || new Date()
-              };
-
-              this.addMessage(newMessage);
-            }
-          });
-        } catch (e) {
-          console.error('Error procesando mensaje:', e);
-        }
-      };
-
-      this.webSocket.onerror = () => {
-        this.connectionStatus$.next('Error de conexión');
-      };
-
-      this.webSocket.onclose = () => {
-        this.connectionStatus$.next('Desconectado');
-        this.webSocket = null;
-      };
-
+      this.webSocket.onopen = this.handleOpen.bind(this);
+      this.webSocket.onmessage = this.handleMessageEvent.bind(this);
+      this.webSocket.onerror = this.handleError.bind(this);
+      this.webSocket.onclose = this.handleClose.bind(this);
     } catch (error) {
-      this.connectionStatus$.next('Error de inicialización');
+      console.error('Error al inicializar WebSocket:', error);
+      this.connectionStatus$.next(ConnectionStatus.InitError);
+      this.scheduleReconnect();
     }
-  }
-
-  private addMessage(message: ChatMessage): void {
-    const currentMessages = this.messages$.value;
-    if (currentMessages.length > 100) {
-      currentMessages.shift();
-    }
-    this.messages$.next([...currentMessages, message]);
   }
 
   disconnect(): void {
+    this.isIntentionalDisconnect = true;
+
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = null;
+    }
+
     if (this.webSocket) {
       this.webSocket.close();
       this.webSocket = null;
     }
+    this.connectionStatus$.next(ConnectionStatus.Disconnected);
   }
 
   getMessages(): Observable<ChatMessage[]> {
@@ -102,5 +68,107 @@ export class ChatService {
 
   getConnectionStatus(): Observable<string> {
     return this.connectionStatus$.asObservable();
+  }
+
+  private handleOpen(): void {
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = null;
+    }
+    this.connectionStatus$.next(ConnectionStatus.Connected);
+    this.sendHandshake();
+  }
+
+  private sendHandshake(): void {
+    const handshake = JSON.stringify({ protocol: 'json', version: 1 }) + this.RECORD_SEPARATOR;
+    this.sendRawMessage(handshake);
+  }
+
+  private handleMessageEvent(event: MessageEvent): void {
+    try {
+      const rawData = event.data.split(this.RECORD_SEPARATOR);
+
+      rawData.forEach((message: string) => {
+        if (message.trim()) {
+          this.processSignalRMessage(message);
+        }
+      });
+    } catch (error) {
+      console.error('Error procesando evento de mensaje:', error, event.data);
+    }
+  }
+
+  private processSignalRMessage(rawMessage: string): void {
+    const data: SignalRMessageData = JSON.parse(rawMessage);
+
+    switch (data.type) {
+      case SignalRMessageType.Ping:
+        this.handlePing();
+        break;
+      case SignalRMessageType.Invocation:
+        this.handleInvocation(data);
+        break;
+    }
+  }
+
+  private handlePing(): void {
+    this.sendRawMessage(JSON.stringify({ type: SignalRMessageType.Ping }) + this.RECORD_SEPARATOR);
+  }
+
+  private handleInvocation(data: SignalRMessageData): void {
+    if (data.target === 'ReceiveMessage' && data.arguments && data.arguments.length > 0) {
+      const payload = data.arguments[0] as ReceiveMessagePayload;
+      const newMessage: ChatMessage = {
+        UserName: payload.userName || 'Sistema',
+        Message: payload.message || '',
+        Platform: payload.platform || 'Desconocido',
+        CreatedAt: payload.createdAt || new Date()
+      };
+
+      this.addMessage(newMessage);
+    }
+  }
+
+  private sendRawMessage(message: string): void {
+    if (this.webSocket?.readyState === WebSocket.OPEN) {
+      this.webSocket.send(message);
+    }
+  }
+
+  private handleError(event: Event): void {
+    console.error('WebSocket Error:', event);
+    this.connectionStatus$.next(ConnectionStatus.Error);
+  }
+
+  private handleClose(event: CloseEvent): void {
+    console.log('WebSocket cerrado:', event?.code, event?.reason);
+    this.connectionStatus$.next(ConnectionStatus.Disconnected);
+    this.webSocket = null;
+    this.scheduleReconnect();
+  }
+
+  private scheduleReconnect(): void {
+    if (this.isIntentionalDisconnect) {
+      return;
+    }
+
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId);
+    }
+
+    this.reconnectTimeoutId = setTimeout(() => {
+      console.log('Intentando reconectar al WebSocket...');
+      this.connect();
+    }, this.RECONNECT_INTERVAL);
+  }
+
+  private addMessage(message: ChatMessage): void {
+    const currentMessages = this.messages$.value;
+
+    if (currentMessages.length >= this.MAX_MESSAGES) {
+      currentMessages.shift();
+    }
+
+    this.messages$.next([...currentMessages, message]);
   }
 }
