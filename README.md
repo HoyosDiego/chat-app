@@ -1,5 +1,8 @@
 # ChatApp
 
+<img width="502" height="746" alt="image" src="https://github.com/user-attachments/assets/bdb6922c-d88d-45b5-b7e1-8b6ba950812b" />
+
+
 <video src="https://github.com/user-attachments/assets/2c0368f1-04bc-4f4e-8962-3f3b1a923ad0" width="100%" controls autoplay muted loop>
   Tu navegador no soporta el elemento de video.
 </video>
