@@ -1,4 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Lobster&family=Lobster+Two:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@font-face {
+    font-family: 'Google Sans';
+    src: url('/fonts/GoogleSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Google Sans';
+    src: url('/fonts/GoogleSans-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Lobster';
+    src: url('/fonts/Lobster-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Lobster Two';
+    src: url('/fonts/LobsterTwo-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Lobster Two';
+    src: url('/fonts/LobsterTwo-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
 
 :host {
     display: block;
