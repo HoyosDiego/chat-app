@@ -4,7 +4,7 @@ import { ChatService } from './services/chat.service';
 import { ChatMessage } from './services/chat.service.types';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-
+const URL_START = 'https://static-cdn.jtvnw.net/emoticons'
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -94,7 +94,7 @@ export class App implements OnInit, OnDestroy {
       return false;
     }
 
-    return message.startsWith('https://static-cdn.jtvnw.net/emoticons');
+    return message.startsWith(URL_START);
   }
 
   public getMessageSegments(message: string) {
