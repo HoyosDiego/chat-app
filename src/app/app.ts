@@ -103,7 +103,6 @@ export class App implements OnInit, OnDestroy {
   }
 
   public isSub(userName: string): boolean {
-    // Simulación de validación de suscriptor para la demostración
     const lower = userName.toLowerCase();
     return lower.includes('pro') || lower.includes('master') || lower.includes('sub');
   }
