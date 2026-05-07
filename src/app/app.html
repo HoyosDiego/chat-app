@@ -16,8 +16,9 @@
         <div class="message-header">
           <span class="user-name">{{ msg.UserName }}</span>
           <span class="badge sub-badge" *ngIf="isSub(msg.UserName)">SUB</span>
-          <span class="badge platform-badge" [ngClass]="msg.Platform.toLowerCase()">{{ msg.Platform | uppercase
-            }}</span>
+          <span class="badge platform-badge" [ngClass]="msg.Platform.toLowerCase()">
+            {{ msg.Platform | uppercase }}
+          </span>
           <span class="message-time">{{ msg.CreatedAt | date: 'HH:mm' }}</span>
         </div>
 
