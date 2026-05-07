@@ -97,7 +97,6 @@
     display: flex;
     gap: 16px;
     align-items: flex-start;
-    animation: fadeIn 0.3s ease-out forwards;
 }
 
 @keyframes fadeIn {
